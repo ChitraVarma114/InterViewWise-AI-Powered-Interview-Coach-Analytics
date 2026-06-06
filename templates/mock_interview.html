@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Mock Interview{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>🎤 AI Mock Interview</h2>
+
+  <!-- Question -->
+  <div class="card">
+    <h3>Question</h3>
+    <p id="question-text">{{ root_question.question_text }}</p>
+  </div>
+
+  <!-- Video -->
+  <div class="video-container">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="output"></canvas>
+    <div class="feedback-overlay" id="feedback-overlay">Camera initializing...</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="card" style="text-align:center; margin-top:12px">
+    <button id="start-btn" class="button success">🎙 Start Recording</button>
+    <button id="stop-btn" class="button danger" style="display:none">⏹ Stop & Submit</button>
+  </div>
+
+  <!-- AI Feedback Card -->
+  <div class="card" id="analysis-card" style="display:none">
+<h3>📊 AI Feedback: <span id="score-display">-/10</span></h3>
+    <h4>📝 Transcript</h4>
+    <div id="transcript-text"></div>
+    <h4>🤖 Feedback Scores</h4>
+    <p>Technical: <span id="technicalScore"></span></p>
+    <p>Communication: <span id="communicationScore"></span></p>
+    <p>Body Language: <span id="bodyLanguageScore"></span></p>
+    <h4>💡 Overall Feedback</h4>
+    <div id="overallFeedback"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script>
+const videoElement = document.getElementById("video");
+const canvasElement = document.getElementById("output");
+const canvasCtx = canvasElement.getContext("2d");
+
+// Collect metrics
+let metrics = {
+  eye_contact_percent: 0,
+  smile_frequency: 0,
+  attention_span_score: 0,
+  blink_rate: 0,
+  posture_score: 0,
+  head_stability: 0
+};
+
+const faceMesh = new FaceMesh({locateFile: (file) =>
+  `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+faceMesh.setOptions({
+  maxNumFaces: 1,
+  refineLandmarks: true,
+  minDetectionConfidence: 0.5,
+  minTrackingConfidence: 0.5
+});
+faceMesh.onResults(results => {
+  canvasCtx.save();
+  canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
+  canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
+
+  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length>0){
+    // Simulated metrics (replace with real extraction)
+    metrics.eye_contact_percent = Math.floor(Math.random()*100);
+    metrics.smile_frequency = Math.floor(Math.random()*100);
+    metrics.attention_span_score = Math.floor(Math.random()*100);
+    metrics.blink_rate = Math.floor(Math.random()*30);
+    metrics.posture_score = Math.floor(Math.random()*100);
+    metrics.head_stability = Math.floor(Math.random()*100);
+  }
+  canvasCtx.restore();
+});
+
+const camera = new Camera(videoElement, {
+  onFrame: async () => { await faceMesh.send({image: videoElement}); },
+  width:640, height:480
+});
+camera.start();
+
+// Recording
+const startBtn = document.getElementById("start-btn");
+const stopBtn = document.getElementById("stop-btn");
+let mediaRecorder, chunks = [];
+
+startBtn.onclick = () => {
+  chunks = [];
+  navigator.mediaDevices.getUserMedia({video:true,audio:true})
+    .then(stream => {
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.start();
+      startBtn.style.display = "none";
+      stopBtn.style.display = "inline-block";
+    });
+};
+
+stopBtn.onclick = () => {
+  mediaRecorder.stop();
+  stopBtn.style.display = "none";
+
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(chunks, {type:"video/webm"});
+    const formData = new FormData();
+    formData.append("question_id", "{{ root_question.id }}");
+    Object.entries(metrics).forEach(([k,v]) => formData.append(k,v));
+    formData.append("duration_sec", 30);
+    formData.append("audio", blob);
+
+    fetch("/api/live_interview/upload", {method:"POST", body:formData})
+      .then(res => res.json())
+      .then(data => {
+        if(!data.error){
+          document.getElementById("analysis-card").style.display = "block";
+          document.getElementById("score-display").innerText = data.overall_score+"/10";
+          document.getElementById("technicalScore").innerText = data.technical_score;
+          document.getElementById("communicationScore").innerText = data.communication_score;
+          document.getElementById("bodyLanguageScore").innerText = data.metrics.overall_body_language_score;
+          document.getElementById("overallFeedback").innerText = data.ai_feedback || "(No feedback)";
+          document.getElementById("transcript-text").innerText = data.transcript || "(No transcript)";
+        } else {
+          alert("Error: "+data.error);
+        }
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to save interview.");
+      });
+  };
+};
+</script>
+{% endblock %}

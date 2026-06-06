@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+<div class="form-box">
+    <h2>Edit Profile</h2>
+    <form method="POST" enctype="multipart/form-data">
+        
+        <label>Email:</label>
+        <input type="email" name="email" value="{{ user.email or '' }}" required>
+
+        <label>Role:</label>
+        <select name="role" required>
+            <option value="">-- Select Role --</option>
+            <option value="Software Engineer" {% if user.role == 'Software Engineer' %}selected{% endif %}>Software Engineer</option>
+            <option value="Data Analyst" {% if user.role == 'Data Analyst' %}selected{% endif %}>Data Analyst</option>
+            <option value="Data Scientist" {% if user.role == 'Data Scientist' %}selected{% endif %}>Data Scientist</option>
+            <option value="HR" {% if user.role == 'HR' %}selected{% endif %}>HR</option>
+            <option value="Project Manager" {% if user.role == 'Project Manager' %}selected{% endif %}>Project Manager</option>
+            <option value="QA Engineer" {% if user.role == 'QA Engineer' %}selected{% endif %}>QA Engineer</option>
+            <option value="Marketing" {% if user.role == 'Marketing' %}selected{% endif %}>Marketing</option>
+            <option value="Intern" {% if user.role == 'Intern' %}selected{% endif %}>Intern</option>
+            <option value="Support" {% if user.role == 'Support' %}selected{% endif %}>Support</option>
+            <option value="Other" {% if user.role == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+
+        <label>Education Level:</label>
+        <select name="education_level">
+            <option value="">-- Select Level --</option>
+            <option value="Undergraduate" {% if user.education_level == 'Undergraduate' %}selected{% endif %}>Undergraduate</option>
+            <option value="Postgraduate" {% if user.education_level == 'Postgraduate' %}selected{% endif %}>Postgraduate</option>
+            <option value="PhD" {% if user.education_level == 'PhD' %}selected{% endif %}>PhD</option>
+            <option value="Diploma" {% if user.education_level == 'Diploma' %}selected{% endif %}>Diploma</option>
+            <option value="Other" {% if user.education_level == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+
+        <label>LinkedIn Profile:</label>
+        <input type="url" name="linkedin_profile" value="{{ user.linkedin_profile or '' }}">
+
+        <label>Upload Resume:</label>
+        <input type="file" name="resume" accept=".pdf,.doc,.docx">
+
+        {% if user.resume_path %}
+        <p>Resume:
+            <a href="{{ url_for('static', filename=user.resume_path) }}" target="_blank">View</a>
+        </p>
+        {% endif %}
+
+        <button type="submit" class="button">Update Profile</button>
+    </form>
+</div>
+{% endblock %}

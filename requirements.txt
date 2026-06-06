@@ -1,0 +1,12 @@
+Flask
+mysql-connector-python
+python-dotenv
+Werkzeug
+openai-whisper
+mediapipe
+SpeechRecognition
+PyAudio
+nltk
+openai
+PyPDF2
+python-docx

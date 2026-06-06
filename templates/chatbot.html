@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}AI Chatbot{% endblock %}
+{% block content %}
+<div class="chat-layout">
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h3>Chats</h3>
+      <form action="{{ url_for('chatbot_new') }}" method="post">
+        <button class="new-chat-btn">+ New</button>
+      </form>
+    </div>
+    <ul class="chat-list">
+      {% for s in sessions %}
+        <li class="chat-item {% if s.id == current_session_id %}active{% endif %}">
+          <a href="{{ url_for('chatbot_session', chat_id=s.id) }}">{{ s.title }}</a>
+          <form action="{{ url_for('chatbot_delete', chat_id=s.id) }}" method="post" style="display:inline;">
+            <button type="submit" class="delete-btn" title="Delete">🗑</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <div class="chatbox">
+    <div id="chat-window" class="chat-window">
+      {% if messages %}
+        {% for m in messages %}
+          <div class="bubble {{ 'user' if m.role == 'user' else 'bot' }}">
+            <strong>{{ 'You' if m.role == 'user' else 'AI' }}:</strong>
+            <span>{{ m.content | safe }}</span>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-msg">Start chatting...</p>
+      {% endif %}
+    </div>
+
+    <form method="POST" id="chat-form" class="chat-form">
+      <div class="input-container">
+        <input type="text" name="message" id="message-input" placeholder="Ask anything" required autocomplete="off">
+        <button type="submit" class="send-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-send"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const chatWindow = document.getElementById('chat-window');
+  const chatForm = document.getElementById('chat-form');
+  const input = document.getElementById('message-input');
+
+  // Scroll to bottom on load
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+
+  // AJAX form submission
+  chatForm.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const formData = new FormData(chatForm);
+    const resp = await fetch("", { method: "POST", body: formData });
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    chatWindow.innerHTML = doc.getElementById('chat-window').innerHTML;
+    input.value = "";
+    chatWindow.scrollTop = chatWindow.scrollHeight;
+  });
+</script>
+
+<style>
+.chat-layout {
+  display: flex;
+  height: 70vh;
+  max-height: 85vh;
+  overflow: hidden;
+  gap: 8px;
+}
+
+/* Sidebar */
+.sidebar {
+  flex: 0 0 18%;
+  min-width: 180px;
+  max-width: 240px;
+  background: #f8f9fa;
+  border-right: 1px solid #ddd;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.new-chat-btn {
+  background: #4a6cf7;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.chat-list { flex-grow: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
+.chat-item { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    padding: 8px; /* Increased padding */
+    border-radius: 4px; 
+    margin-bottom: 4px; /* Space between items */
+}
+.chat-item.active { background: #e0e7ff; }
+.chat-item a { text-decoration: none; color: #111; flex-grow: 1; font-size: 13px; }
+
+/* Updated Delete Button (no hover) */
+.delete-btn { 
+    background: none; 
+    border: none; 
+    color:red;
+    cursor: pointer; 
+    font-size: 24px;
+    padding: 0 14px;
+}
+
+/* Chatbox */
+.chatbox {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+.chat-window {
+  flex-grow: 1;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 10px;
+  background: #f9f9f9;
+  overflow-y: auto;
+  font-size: 14px;
+}
+.bubble { padding: 8px; margin: 4px 0; border-radius: 8px; max-width: 70%; word-wrap: break-word; }
+.bubble.user { background: #d1e7dd; margin-left: auto; text-align: right; }
+.bubble.bot { background: #e2e3e5; margin-right: auto; text-align: left; }
+.empty-msg { text-align: center; color: #666; font-style: italic; }
+
+.chat-form { 
+  display: flex; 
+  margin-top: 6px; 
+}
+
+/* Updated Input and Send Button */
+.input-container {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 4px 10px;
+  flex-grow: 1;
+  position: relative; /* Needed for positioning the send button */
+}
+
+.input-container input {
+  flex-grow: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  padding: 4px;
+  background: transparent;
+  padding-right: 40px; /* Make space for the button */
+}
+
+.send-btn {
+  background: #4a6cf7;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute; /* Position it absolutely within the container */
+  right: 8px; /* Place it in the corner */
+  top: 24%;
+  transform: translateY(-50%);
+}
+
+.send-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: white; /* Change color to white for better visibility */
+  fill: white; /* Fill the icon */
+}
+
+
+/* Responsive */
+@media (max-width: 900px) {
+  .chat-layout { flex-direction: column; height: auto; }
+  .sidebar { flex: none; max-width: 100%; border-right: none; border-bottom: 1px solid #ddd; }
+}
+</style>
+{% endblock %}

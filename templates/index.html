@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}AI Interview Coach{% endblock %}
+{% block content %}
+<main class="main-content" id="home">
+    {% if user %}
+    <h1 class="welcome">Welcome, {{ user }}!</h1>
+    {% else %}
+    <h1 class="welcome">🚀 Welcome to InterViewWise</h1>
+    {% endif %}
+
+    <!-- Hero -->
+    <section class="card">
+        <h2>Your Personal AI Interview Coach</h2>
+        <p>
+            InterViewWise helps you <strong>practice, improve, and succeed</strong> in your interviews. 
+            From technical quizzes to live mock interviews with AI feedback, 
+            we prepare you for every challenge and every question.
+        </p>
+    </section>
+
+
+    <!-- Features -->
+    <section class="card">
+        <h2>✨ Key Features</h2>
+        <ul>
+            <li>
+                📚 <strong>Role-Specific Quizzes</strong>  
+                Practice with multiple-choice and coding-style questions designed for your role.  
+                Quizzes cover technical knowledge, problem-solving, and aptitude, ensuring you’re industry-ready.
+            </li>
+            <li>
+                🎤 <strong>AI Mock Interviews</strong>  
+                Face role-specific mock interviews powered by AI.  
+                Get structured feedback on communication, confidence, and technical accuracy — just like in a real interview.
+            </li>
+            <li>
+                🤖 <strong>24/7 Chatbot Assistant</strong>  
+                Ask career-related questions anytime.  
+                Whether it’s resume guidance, common interview pitfalls, or negotiation tips, the chatbot provides actionable advice instantly.
+            </li>
+
+            <li>
+                📊 <strong>Progress Tracking & Reports</strong>  
+                Visual dashboards show your quiz performance, interview scores, and improvement over time.  
+                Track your growth and identify strengths and weaknesses at a glance.
+            </li>
+        </ul>
+    </section>
+
+    <!-- CTA -->
+    <section class="card" style="text-align:center;">
+        <h2>Ready to Boost Your Career?</h2>
+        <p>Start practicing today and be fully prepared for your next big opportunity.</p>
+        <a href="{{ url_for('login') }}" class="button success">Get Started</a>
+    </section>
+</main>
+{% endblock %}

@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}AI Resume Review{% endblock %}
+
+{% block content %}
+<style>
+  .review-card {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    background: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .review-card h2 {
+    text-align: center;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+
+  .review-card h3 {
+    color: #555;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.3rem;
+  }
+
+  .review-card pre {
+    background: #f9f9f9;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+
+  .accordion {
+    margin: 1rem 0;
+  }
+
+  .accordion-item {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+  }
+
+  .accordion-header {
+    background: #f1f1f1;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    font-weight: bold;
+    color: #333;
+  }
+
+  .accordion-content {
+    display: none;
+    padding: 1rem;
+    background: #fff;
+    border-top: 1px solid #ddd;
+  }
+
+  .button {
+    display: inline-block;
+    padding: 0.8rem 1.5rem;
+    margin-top: 2rem;
+    text-decoration: none;
+    background-color: #4a90e2;
+    color: white;
+    border-radius: 8px;
+    transition: 0.3s;
+  }
+
+  .button:hover {
+    background-color: #357abd;
+  }
+</style>
+
+<div class="review-card">
+  <h2>📄 AI Review for {{ user.username }}</h2>
+  <p><strong>Email:</strong> {{ user.email }}</p>
+
+  <h3>AI Feedback:</h3>
+  {% if ai_review %}
+    <div class="accordion">
+      {% set sections = ai_review.split('**Weaknesses:**') %}
+      <div class="accordion-item">
+        <div class="accordion-header">Strengths</div>
+        <div class="accordion-content">{{ sections[0]|replace('\n','<br>')|safe }}</div>
+      </div>
+      {% if sections|length > 1 %}
+      <div class="accordion-item">
+        <div class="accordion-header">Weaknesses</div>
+        <div class="accordion-content">{{ '**Weaknesses:**' + sections[1]|replace('\n','<br>')|safe }}</div>
+      </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <p>No AI review available.</p>
+  {% endif %}
+
+  <div style="text-align:center;">
+    <a href="{{ url_for('profile') }}" class="button">⬅ Back to Profile</a>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.accordion-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const content = header.nextElementSibling;
+      content.style.display = content.style.display === 'block' ? 'none' : 'block';
+    });
+  });
+</script>
+{% endblock %}
