@@ -4,7 +4,9 @@ A **Flask + MySQL** platform that quantifies interview performance through NLP- 
 
 **The core idea:** most interview-prep tools are subjective. This project asks a different question — *what if improvement could be measured?* Every mock interview becomes a structured row of data the user can analyze, turning a fuzzy "I think I did better" into a number you can chart.
 
-⚠️ **Project status: MVP / solo learning project.** The core analytics pipeline (quiz module, speech-to-text, sentiment scoring, LLM answer evaluation, MediaPipe face/pose detection, dashboards, chatbot) is functional. Real-time *live* video streaming in the browser is only partially wired — see Limitations. Built solo as a final-year exploration project.
+> ⚠️ **Project status: MVP / solo learning project.** The core analytics pipeline (quiz module, speech-to-text, sentiment scoring, LLM answer evaluation, MediaPipe face/pose detection, dashboards, chatbot) is functional. Real-time *live* video streaming in the browser is only partially wired — see Limitations. Built solo as a final-year exploration project.
+
+![InterViewWise home screen](images/homepage.png)
 
 ---
 
@@ -33,6 +35,14 @@ Dashboard  (Chart.js)                      ──►  trends, role-wise comparis
 ```
 
 Each attempt is stored as structured data, building a longitudinal record the user can analyze to spot patterns in their own performance over time.
+
+---
+
+## Architecture
+
+A single interview session: the Flask backend coordinates MySQL and the external services, scoring each answer and persisting the result before returning feedback.
+
+![System sequence diagram](images/architecture.png)
 
 ---
 
