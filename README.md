@@ -1,138 +1,108 @@
 # InterViewWise — AI-Powered Interview Analytics Platform
 
-A Flask + MySQL platform that quantifies interview performance through 
-NLP-derived metrics — sentiment scores, confidence indices, response 
-quality ratings — and surfaces them through an interactive dashboard 
-that tracks user progress over time.
+A **Flask + MySQL** platform that quantifies interview performance through NLP- and CV-derived metrics — sentiment scores, confidence signals, answer-quality ratings, and posture/face-presence checks — and surfaces them through an interactive **Chart.js** dashboard that tracks a user's progress over time.
 
-The core idea most interview prep tools are subjective. This project 
-asks what if we could measure improvement — turning every mock 
-interview into structured data the user can analyze.
+**The core idea:** most interview-prep tools are subjective. This project asks a different question — *what if improvement could be measured?* Every mock interview becomes a structured row of data the user can analyze, turning a fuzzy "I think I did better" into a number you can chart.
 
-⚠️ Project status MVP — core analytics pipeline (quiz module, 
-sentiment scoring, dashboard, chatbot) is functional. Live video 
-analysis with MediaPipe was scoped but not implemented in this version.
+⚠️ **Project status: MVP / solo learning project.** The core analytics pipeline (quiz module, speech-to-text, sentiment scoring, LLM answer evaluation, MediaPipe face/pose detection, dashboards, chatbot) is functional. Real-time *live* video streaming in the browser is only partially wired — see Limitations. Built solo as a final-year exploration project.
 
 ---
 
 ## What This Project Actually Does (Data Pipeline)
-User attempts interview
-↓
-Speech-to-text (AssemblyAI)  →  Raw transcript
-↓
-NLP processing (NLTK VADER)  →  Sentiment + confidence scores
-↓
-LLM evaluation (GPT-4o-mini) →  Answer quality rating + feedback
-↓
-MySQL logging               →  Persistent attempt history
-↓
-Dashboard (Chart.js)        →  Trends, comparisons, weak-area analysis
 
-Every interview attempt becomes a structured row of data with 
-sentiment scores, confidence ratings, quality ratings, and timestamps. 
-Over time, this builds a longitudinal dataset the user can analyze 
-to spot patterns in their own performance.
+```
+User attempts a mock interview (audio / video)
+        │
+        ▼
+Speech-to-text  (AssemblyAI REST API)      ──►  raw transcript
+        │
+        ▼
+Sentiment scoring  (NLTK VADER)            ──►  positive / negative / neutral + confidence signal
+        │
+        ▼
+Answer evaluation  (OpenAI GPT-4o-mini)    ──►  answer-quality rating + written feedback
+        │
+        ▼
+Face & posture check  (MediaPipe + OpenCV) ──►  face-presence count + posture-detected signal
+        │
+        ▼
+Persistence  (MySQL)                       ──►  attempt history (scores, sentiment, transcript, timestamp)
+        │
+        ▼
+Dashboard  (Chart.js)                      ──►  trends, role-wise comparisons, weak-area analysis
+```
 
-## Key Analytics Features
+Each attempt is stored as structured data, building a longitudinal record the user can analyze to spot patterns in their own performance over time.
 
-- Performance Dashboard — Chart.js visualizations of quiz scores 
-  over time, sentiment trends per attempt, role-wise performance breakdowns
-- Cohort-style Tracking — Compare attempts across roles (HR, SDE, 
-  Data Science, PM) to identify strongest and weakest skill areas
-- Sentiment Score Time Series — VADER-based positivenegativeneutral 
-  scoring of every recorded answer, charted against attempt history
-- Quiz Analytics — Per-topic accuracy, attempt frequency, score 
-  distributions
-- Resume → Skill Extraction — PyPDF2  python-docx parsing extracts 
-  skills, feeds into role-specific question generation
+---
+
+## Key Features
+
+- **Performance dashboard** — Chart.js line, bar, and doughnut charts of quiz scores over time, sentiment trends per attempt, and role-wise breakdowns.
+- **Role-based tracking** — compare attempts across roles (HR, SDE, Data Science, Product Management) to surface strongest and weakest areas.
+- **Sentiment time series** — VADER-based positive/negative/neutral scoring of each recorded answer, charted against attempt history.
+- **Quiz analytics** — per-topic accuracy, attempt frequency, and score distributions.
+- **Face & posture signals** — MediaPipe face-detection and pose-detection over video frames (presence count + posture detected).
+- **Resume → skill extraction** — PyPDF2 / python-docx parse an uploaded resume to extract skills that feed role-specific question generation.
+- **AI chatbot** — a GPT-backed career assistant with persistent, multi-session chat history.
+
+---
 
 ## Tech Stack
 
-Data Layer
-- MySQL — relational schema for users, attempts, scores, transcripts, sentiment data
-- Schema designed for analytical queries (joins across attempts, users, roles, topics)
+**Application layer**
+- **Flask (Python)** — routes, session management, server-side logic
+- **Jinja2** — server-rendered HTML templates
+- **Werkzeug** — password hashing and security
 
-Application Layer
-- Flask (Python) — REST endpoints, session management, route handling
-- Werkzeug — password hashing, security
-- Jinja2 — server-side templating
+**Data layer**
+- **MySQL** (via `mysql-connector-python`) — relational schema for users, attempts, scores, transcripts, sentiment, and chat data, designed for analytical queries (joins across attempts, users, roles, topics)
 
-NLP & ML Pipeline
-- OpenAI GPT-4o-mini — answer quality evaluation, question generation
-- NLTK VADER — sentiment analysis on transcribed responses
-- AssemblyAI — speech-to-text conversion
-- FFmpeg — audio format conversion (.webm → .wav)
+**NLP & ML pipeline**
+- **AssemblyAI** — speech-to-text (called over its REST API with `requests`)
+- **OpenAI GPT-4o-mini** — answer-quality evaluation and question generation
+- **NLTK VADER** — sentiment analysis on transcribed responses
+- **MediaPipe + OpenCV** — face-detection and pose-detection on video frames
 
-Visualization
-- Chart.js — performance dashboards with line charts, bar charts, doughnut charts
+**Visualization**
+- **Chart.js** — dashboards (line, bar, doughnut charts)
 
-Document Processing
-- PyPDF2 — PDF resume parsing
-- python-docx — Word resume parsing
-- BeautifulSoup — LinkedIn profile scraping (optional pathway)
+**Supporting**
+- **FFmpeg** — audio format conversion (`.webm` → `.wav`) via subprocess
+- **PyPDF2 / python-docx** — resume parsing (PDF / Word)
+- **BeautifulSoup** — optional LinkedIn profile scraping pathway
 
-## Database Schema (Analytics-Friendly Design)
+---
 
-The MySQL schema was deliberately designed for analytical queries
+## Database Schema (analytics-friendly design)
+
+The MySQL schema is built for analytical queries. Key tables:
 
 - `users` — profiles, role preferences, signup dates
-- `quiz_attempts` — every attempt with score, role, topic, timestamp
-- `interview_attempts` — every mock interview with sentiment scores, 
-  transcript, GPT feedback, role
-- `chatbot_history` — query logs for usage pattern analysis
+- `quizzes` / `quiz_attempts` — question bank and every attempt (score, role, topic, timestamp)
+- `interview_questions` / `dynamic_questions` — static and AI-generated question sets
+- `live_interview_attempts` — every mock interview with sentiment, confidence, body-language signals, transcript, and GPT feedback
+- `interview_feedback_detailed` — per-category feedback (technical / communication / body language)
+- `chat_sessions` / `chat_messages` — multi-session chatbot history
+- `resume_analysis` — parsed skills, experience, and AI resume review
 
-This structure supports queries like What's the average sentiment 
-score per role over the last 30 days or Which topic has the lowest 
-quiz accuracy across all users — exactly the kind of analysis a 
-data analyst would run on production data.
+This structure supports queries such as *"average sentiment score per role over the last 30 days"* or *"which topic has the lowest quiz accuracy"* — the kind of analysis you'd run on production data.
 
-## What I Learned
-
-- End-to-end data pipeline design — from raw user input (audio) 
-  through preprocessing (FFmpeg), processing (AssemblyAI, NLTK), to 
-  analytics-ready storage (MySQL) and visualization (Chart.js)
-- Schema design for analytical queries — structured tables and 
-  relationships specifically to support cohort analysis and time-series tracking
-- Working with NLP outputs as data — treating sentiment scores and 
-  GPT ratings as quantitative metrics, not just qualitative outputs
-- Quantifying subjective experiences — translating interview 
-  performance into measurable dimensions (sentiment, confidence, accuracy)
-- API integration patterns — environment-based key management, 
-  retry logic, format conversion across services
-- Solo project scope management — recognizing when to ship MVP vs 
-  pursue feature creep; MediaPipe was scoped out when timeline pressure made it unrealistic
-
-## Project Structure
-interviewwise
-├── app.py                    # Flask routes & API endpoints
-├── requirements.txt
-├── .env.example              # Template for API keys (real .env not committed)
-├── migrations
-│   ├── schema.sql            # MySQL schema definition
-│   └── sample_data.sql       # Seed data for testing
-├── static
-│   ├── style.css
-│   └── uploads              # Resume + audio uploads
-└── templates
-├── index.html, login.html, register.html
-├── profile.html, edit_profile.html
-├── quiz.html, quiz_result.html
-├── mock_interview.html, interview_feedback.html
-├── live_interview.html   # Scaffolded; not connected to MediaPipe
-├── chatbot.html
-└── about.html, roles.html
+---
 
 ## Setup
 
+**Prerequisites:** Python 3.10+, MySQL, and FFmpeg installed on your system.
+
 ```bash
-git clone httpsgithub.comChitraVarma114interviewwise.git
+git clone https://github.com/ChitraVarma114/interviewwise.git
 cd interviewwise
 pip install -r requirements.txt
 ```
 
-Create `.env` based on `.env.example`
-FLASK_APP=app.py
-FLASK_ENV=development
+Create a `.env` file based on `.env.example` and fill in your own values:
+
+```env
 SECRET_KEY=your-secret-key
 OPENAI_API_KEY=your-openai-api-key
 ASSEMBLYAI_API_KEY=your-assemblyai-api-key
@@ -140,48 +110,85 @@ MYSQL_HOST=localhost
 MYSQL_USER=root
 MYSQL_PASSWORD=your-password
 MYSQL_DATABASE=interviewwise_db
-
-Set up the database
-```bash
-mysql -u root -p
-CREATE DATABASE interviewwise_db;
-exit;
-mysql -u root -p interviewwise_db  migrationsschema.sql
-mysql -u root -p interviewwise_db  migrationssample_data.sql
+FFMPEG_PATH=ffmpeg
 ```
 
-Run
+Set up the database:
+
+```bash
+mysql -u root -p -e "CREATE DATABASE interviewwise_db;"
+mysql -u root -p interviewwise_db < migrations/schema.sql
+mysql -u root -p interviewwise_db < migrations/sample_data.sql
+```
+
+Run the app:
+
 ```bash
 flask run
 ```
 
+> On first run, NLTK downloads the `vader_lexicon` automatically if it isn't already present. The `static/uploads/` folder is created automatically.
+
+---
+
+## Project Structure
+
+```
+interviewwise/
+├── app.py                    # Flask routes, pipeline logic, API integrations
+├── requirements.txt
+├── .env.example              # Template for keys/config (.env is gitignored)
+├── .gitignore
+├── migrations/
+│   ├── schema.sql            # MySQL schema (all tables)
+│   └── sample_data.sql       # Seed data for testing
+├── static/
+│   ├── style.css
+│   └── uploads/              # Resume + audio/video uploads (gitignored, auto-created)
+└── templates/
+    ├── base.html             # shared layout (all pages extend this)
+    ├── index.html, login.html, register.html
+    ├── profile.html, edit_profile.html
+    ├── quiz.html, quiz_result.html
+    ├── mock_interview.html   # live AI interview UI (webcam + recording)
+    ├── chatbot.html
+    └── review.html, resume_review.html   # AI resume feedback
+```
+
+---
+
+## What I Learned
+
+- **End-to-end data pipeline design** — from raw user input (audio) through preprocessing (FFmpeg), processing (AssemblyAI, NLTK, GPT-4o-mini), to analytics-ready storage (MySQL) and visualization (Chart.js).
+- **Schema design for analytical queries** — structuring tables and relationships specifically to support role-wise comparison and time-series tracking, not just storage.
+- **Working with NLP outputs as data** — treating sentiment scores and LLM ratings as quantitative metrics to be charted and compared, not just one-off qualitative outputs.
+- **API integration patterns** — environment-based key management, REST polling (AssemblyAI), and format conversion across services.
+- **Solo scope management** — recognizing when to ship an MVP versus chase feature creep; deciding which metrics were realistic to deliver under a timeline.
+
+---
+
 ## Limitations & Honest Disclosures
 
-- MediaPipe body-language analysis was scoped but not implemented — 
-  the live_interview template exists as scaffolding but does not 
-  currently connect to MediaPipe. Building this requires significant 
-  additional work in computer vision pipelines.
-- LinkedIn scraping is fragile (LinkedIn actively blocks scraping); 
-  in production this should use the official API with OAuth.
-- GPT-4o-mini ratings are not validated against human ground truth 
-  — interview quality scores are LLM-derived, not benchmarked.
-- MVP scope — this was a solo learning project, not a production system.
+- **Live real-time video** — the MediaPipe face/pose functions run on recorded/uploaded video; the in-browser *live* streaming UI is only partially wired.
+- **Face/pose, not emotion** — MediaPipe here detects face presence and posture; it does **not** classify emotions or measure eye-contact percentage. Those were design goals, not shipped metrics.
+- **GPT ratings are not benchmarked** — answer-quality scores are LLM-derived and have **not** been validated against human ground-truth labels.
+- **LinkedIn scraping is fragile** — LinkedIn actively blocks scraping; a production version should use the official API with OAuth.
+- **MVP scope** — a solo learning project, not a production system.
 
-## What I'd Build Next (If Resumed)
+---
 
-- AB test prompt strategies for GPT evaluation to see which prompts 
-  produce ratings most aligned with self-assessment
-- Add Power BI  dashboard layer on top of MySQL for richer analytics 
-  — e.g., users who improve fastest typically practice X timesweek
-- Cohort analysis do users from certain backgrounds improve faster 
-  than others Where in the funnel do users drop off
-- Implement MediaPipe properly with eye-contact %, smile frequency, 
-  and posture-stability metrics
+## What I'd Build Next
+
+- A/B test GPT evaluation prompts to find which produce ratings best aligned with self-assessment.
+- Add a Power BI layer on top of MySQL for richer analytics (e.g. practice-frequency vs improvement rate).
+- Funnel and cohort analysis — where users drop off, which cohorts improve fastest.
+- Finish the live MediaPipe pipeline with eye-contact %, expression, and posture-stability metrics.
+
+---
 
 ## About
 
-Built solo by Chitra Varma as a final-year exploration project — 
-B.Sc Computer Science, Pillai HOC College.
+Built solo by **Chitra Varma** — B.Sc Computer Science, Pillai HOC College.
 
-🔗 LinkedIn httpswww.linkedin.cominchitra-varma-12aa28323  
-📧 chitravarma.cyv@gmail.com
+- LinkedIn: https://www.linkedin.com/in/chitra-varma-12aa28323
+- Email: chitravarma.cyv@gmail.com
